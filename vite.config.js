@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [vue()],
   root: 'resources/js', // Directorio raíz de tus archivos Vue
   build: {
-    outDir: path.resolve(__dirname, 'resources/dist'),
+    outDir: path.resolve(__dirname, 'public/vendor/my-quotes-package'),
     emptyOutDir: true,
     rollupOptions: {
       input: {

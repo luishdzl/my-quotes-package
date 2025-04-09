@@ -18,7 +18,7 @@ import QuoteDetail from './components/QuoteDetail.vue';
 export default {
   data() {
     return {
-      currentView: 'quotes-list',
+      currentView: 'quotes-list'
     }
   },
   computed: {
@@ -35,5 +35,46 @@ export default {
 </script>
 
 <style>
-/* Agrega estilos globales para la app */
+/* Estilos globales para un diseño minimalista y mobile first */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+#app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  font-weight: 300;
+  margin-bottom: 20px;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+nav button {
+  margin: 5px 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  background-color: #fff;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+nav button:hover {
+  background-color: #e0e0e0;
+}
 </style>

@@ -31,5 +31,37 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos para el componente random */
+/* Estilos para el componente RandomQuote: diseño minimalista y centrado */
+div {
+  background-color: #fff;
+  padding: 20px;
+  margin: 10px auto;
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+h2 {
+  font-weight: 300;
+  margin-bottom: 15px;
+}
+
+p {
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #218838;
+}
 </style>

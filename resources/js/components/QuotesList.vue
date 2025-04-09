@@ -30,5 +30,33 @@ export default {
 </script>
 
 <style scoped>
-/* Agrega estilos específicos para este componente */
+/* Estilos para el componente QuotesList: diseño con sombras y responsive */
+div {
+  background-color: #fff;
+  padding: 20px;
+  margin: 10px auto;
+  max-width: 600px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h2 {
+  font-weight: 300;
+  margin-bottom: 15px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+li:last-child {
+  border-bottom: none;
+}
 </style>
