@@ -3,9 +3,10 @@
     <h2>Buscar Quote por ID</h2>
     <input v-model.number="id" type="number" placeholder="Ingresa el ID" />
     <button @click="getQuote">Buscar</button>
-    <div v-if="quote">
-      <p>({{ quote.id }}) {{ quote.quote }}</p>
-    </div>
+    <div v-if="quote" class="quote-content">
+          <p class="quote-text">({{ quote.id }}) "{{ quote.quote }}"</p>
+          <p class="author">- {{ quote.author }}</p>
+        </div>
   </div>
 </template>
 

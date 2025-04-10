@@ -62,6 +62,25 @@ nav {
   margin-bottom: 20px;
 }
 
+.quote-content {
+  padding: 15px;
+  margin: 10px 0;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+.quote-text {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.author {
+  color: #6c757d;
+  font-style: italic;
+  text-align: right;
+  margin: 10px 0 0 0;
+}
+
 nav button {
   margin: 5px 10px;
   padding: 10px 20px;

@@ -1,7 +1,10 @@
 <template>
   <div>
     <h2>Quote Aleatoria</h2>
-    <p v-if="quote">({{ quote.id }}) {{ quote.quote }}</p>
+    <div v-if="quote" class="quote-content">
+          <p class="quote-text">({{ quote.id }}) "{{ quote.quote }}"</p>
+          <p class="author">- {{ quote.author }}</p>
+        </div>
     <p v-else>Cargando...</p>
     <button @click="getRandomQuote">Obtener otra</button>
   </div>
@@ -11,7 +14,8 @@
 export default {
   data() {
     return {
-      quote: null
+      quote: null,
+      author: null
     }
   },
   mounted() {
