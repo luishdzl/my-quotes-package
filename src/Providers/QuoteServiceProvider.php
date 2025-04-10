@@ -27,8 +27,8 @@ class QuoteServiceProvider extends ServiceProvider
     // Publica los assets de la UI (JS/CSS)
     $this->publishes([
         __DIR__.'/../../public/vendor/my-quotes-package' => public_path('vendor/my-quotes-package'),
-    ], 'public'); // Tag "public"
-
+    ], 'public');
+    
         // Carga las rutas del paquete: API y Web
         $this->loadRoutesFrom(__DIR__.'/../../src/routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/../../src/routes/web.php');
