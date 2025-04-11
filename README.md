@@ -30,14 +30,17 @@ Este paquete implementa:
 # 1. Agregar el repositorio en composer.json
 Antes de instalar el paquete, debes indicarle a Composer dónde encontrar el repositorio. Para ello, abre el archivo composer.json en tu proyecto Laravel y agrega la siguiente sección (o modifica la existente):
 
-json
+en el composer.json de tu proyecto:
 
+```bash
 "repositories": [
     {
         "type": "vcs",
         "url": "https://github.com/luishdzl/my-quotes-package"
     }
 ]
+```
+
 Este bloque le dice a Composer que el paquete se encuentra en ese repositorio de Git. Una vez añadido, guarda el archivo y desde la terminal ejecuta:
 
 en la terminal:
