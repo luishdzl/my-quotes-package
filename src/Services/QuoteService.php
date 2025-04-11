@@ -39,18 +39,28 @@ class QuoteService
     public function getAllQuotes()
     {
         $this->handleRateLimiting();
-
+    
         $url = Config::get('quotes.base_url') . '/quotes';
         $response = Http::get($url);
-
+    
         if ($response->successful()) {
             $data = $response->json();
-            // Cachea internamente y ordena por ID
+            
+            // Añadir verificación de estructura
+            if (!isset($data['quotes']) || !is_array($data['quotes'])) {
+                return null;
+            }
+            
             $this->cache = $data['quotes'];
             usort($this->cache, fn($a, $b) => $a['id'] <=> $b['id']);
             return $data;
         }
-        return null;
+        return [
+            'quotes' => $data['quotes'] ?? [],
+            'total' => $data['total'] ?? 0,
+            'skip' => $data['skip'] ?? 0,
+            'limit' => $data['limit'] ?? 30
+        ];
     }
 
     public function getRandomQuote()

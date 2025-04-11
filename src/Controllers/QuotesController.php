@@ -17,8 +17,15 @@ class QuotesController extends Controller
     // Devuelve todas las quotes
     public function index()
     {
-        $quotes = $this->quoteService->getAllQuotes();
-        return response()->json($quotes);
+        $response = $this->quoteService->getAllQuotes();
+        
+        // Asegurar estructura consistente
+        return response()->json([
+            'quotes' => $response['quotes'] ?? [],
+            'total' => $response['total'] ?? 0,
+            'skip' => $response['skip'] ?? 0,
+            'limit' => $response['limit'] ?? 30
+        ]);
     }
 
     // Devuelve una quote aleatoria
