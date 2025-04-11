@@ -53,8 +53,9 @@ Dentro de tu paquete se incluye una interfaz de usuario desarrollada con Vue.js.
 
 Acceder a la carpeta del paquete
 La carpeta donde están los archivos de la UI se ubica en el directorio del paquete, por ejemplo:
-vendor/vendor/my-quotes-package
-
+```bash
+cd vendor/vendor/my-quotes-package
+```
 Instalar dependencias de Node.js:
 Desde esa carpeta, ejecuta:
 
