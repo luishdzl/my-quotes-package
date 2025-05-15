@@ -4,102 +4,91 @@ namespace Vendor\MyQuotesPackage\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Cache;
+use Vendor\MyQuotesPackage\Traits\HandlesCache;
 
-/**
- * Clase que gestiona las operaciones relacionadas con las citas (quotes).
- * Incluye funcionalidad para obtener todas las citas, una cita aleatoria o una cita específica por ID,
- * manejando cache local y control de tasa de solicitudes.
- */
 class QuoteService
 {
-    /**
-     * Cache local para almacenar las citas. 
-     * Debe mantenerse ordenado por el ID de las citas para facilitar búsquedas eficientes.
-     *
-     * @var array
-     */
-    protected $cache = [];
+    use HandlesCache;
 
     /**
-     * Contador para rastrear el número de solicitudes realizadas en la ventana de tiempo actual.
-     *
-     * @var int
+     * Clave para almacenar el caché de citas.
      */
-    protected $requestCount = 0;
+    const CACHE_KEY = 'quotes_cache';
 
     /**
-     * Marca de tiempo para el inicio de la ventana de tiempo actual.
-     *
-     * @var int
+     * Obtiene citas desde la caché persistente.
      */
-    protected $windowStart;
-
-    /**
-     * Constructor de la clase. Inicializa el inicio de la ventana de tiempo.
-     */
-    public function __construct()
+    protected function getCachedQuotes(): array
     {
-        $this->windowStart = time();
+        return Cache::get(self::CACHE_KEY, []);
     }
 
     /**
-     * Maneja el control de tasa de solicitudes según los límites configurados.
-     * Si se excede el límite, espera hasta que se reinicie la ventana de tiempo.
+     * Guarda citas en la caché persistente.
      */
-    protected function handleRateLimiting()
+    protected function saveCachedQuotes(array $quotes): void
     {
-        $max = Config::get('quotes.rate_limit', 60); // Límite máximo de solicitudes por ventana.
-        $window = Config::get('quotes.time_window', 60); // Duración de la ventana en segundos.
+        Cache::put(self::CACHE_KEY, $quotes, now()->addHours(1));
+    }
 
-        if (($this->requestCount >= $max) && ((time() - $this->windowStart) < $window)) {
-            $sleepTime = $window - (time() - $this->windowStart);
-            sleep($sleepTime); // Pausa el proceso hasta que se reinicie la ventana.
-            $this->windowStart = time(); // Reinicia la ventana.
-            $this->requestCount = 0; // Reinicia el contador de solicitudes.
+    /**
+     * Maneja el rate limiting sin usar sleep().
+     */
+    protected function handleRateLimiting(): void
+    {
+        $max = Config::get('quotes.rate_limit', 60);
+        $window = Config::get('quotes.time_window', 60);
+        $cacheKey = 'quote_service_rate_limit';
+
+        $currentState = Cache::get($cacheKey, ['count' => 0, 'window_start' => time()]);
+        $currentTime = time();
+        $elapsed = $currentTime - $currentState['window_start'];
+
+        // Reinicia la ventana si ha expirado
+        if ($elapsed > $window) {
+            $currentState = ['count' => 0, 'window_start' => $currentTime];
         }
 
-        $this->requestCount++;
+        // Verifica si se excedió el límite
+        if ($currentState['count'] >= $max) {
+            abort(429, "Demasiadas solicitudes. Espere " . ($window - $elapsed) . " segundos.");
+        }
+
+        $currentState['count']++;
+        Cache::put($cacheKey, $currentState, $window);
     }
 
-    /**
-     * Obtiene todas las citas desde la API y actualiza el cache local.
-     *
-     * @return array|null Datos de las citas o `null` si la solicitud falla.
-     */
-    public function getAllQuotes()
+    public function getAllQuotes(int $skip = 0, int $limit = 30): array
     {
         $this->handleRateLimiting();
 
-        $url = Config::get('quotes.base_url') . '/quotes';
+        $url = Config::get('quotes.base_url') . "/quotes?skip={$skip}&limit={$limit}";
         $response = Http::get($url);
 
         if ($response->successful()) {
             $data = $response->json();
+            $cachedQuotes = $this->getCachedQuotes();
 
-            if (!isset($data['quotes']) || !is_array($data['quotes'])) {
-                return null; // Validación de estructura esperada.
+            if (isset($data['quotes']) && is_array($data['quotes'])) {
+                foreach ($data['quotes'] as $quote) {
+                    $this->insertQuoteSorted($cachedQuotes, $quote);
+                }
+                $this->saveCachedQuotes($cachedQuotes);
             }
 
-            $this->cache = $data['quotes'];
-            usort($this->cache, fn($a, $b) => $a['id'] <=> $b['id']); // Ordena por ID.
             return $data;
         }
 
-        // Estructura de respuesta predeterminada si la solicitud falla.
         return [
             'quotes' => [],
             'total' => 0,
-            'skip' => 0,
-            'limit' => 30
+            'skip' => $skip,
+            'limit' => $limit,
         ];
     }
 
-    /**
-     * Obtiene una cita aleatoria desde la API y la almacena en el cache local.
-     *
-     * @return array|null Datos de la cita aleatoria o `null` si la solicitud falla.
-     */
-    public function getRandomQuote()
+    public function getRandomQuote(): ?array
     {
         $this->handleRateLimiting();
 
@@ -108,23 +97,22 @@ class QuoteService
 
         if ($response->successful()) {
             $quote = $response->json();
-            $this->insertQuoteSorted($quote); // Agrega la cita al cache manteniendo el orden.
+            $cachedQuotes = $this->getCachedQuotes();
+            $this->insertQuoteSorted($cachedQuotes, $quote);
+            $this->saveCachedQuotes($cachedQuotes);
             return $quote;
         }
 
         return null;
     }
 
-    /**
-     * Obtiene una cita específica por ID, buscando primero en el cache.
-     *
-     * @param int $id ID de la cita a buscar.
-     * @return array|null Datos de la cita o `null` si no se encuentra.
-     */
-    public function getQuote(int $id)
+    public function getQuote(int $id): ?array
     {
-        if ($quote = $this->binarySearch($id)) {
-            return $quote; // Devuelve desde el cache si está disponible.
+        $cachedQuotes = $this->getCachedQuotes();
+        $quote = $this->binarySearch($cachedQuotes, $id);
+
+        if ($quote) {
+            return $quote;
         }
 
         $this->handleRateLimiting();
@@ -134,64 +122,11 @@ class QuoteService
 
         if ($response->successful()) {
             $quote = $response->json();
-            $this->insertQuoteSorted($quote); // Agrega la cita al cache.
+            $this->insertQuoteSorted($cachedQuotes, $quote);
+            $this->saveCachedQuotes($cachedQuotes);
             return $quote;
         }
 
         return null;
-    }
-
-    /**
-     * Realiza una búsqueda binaria en el cache para encontrar una cita por ID.
-     *
-     * @param int $id ID de la cita a buscar.
-     * @return array|false Datos de la cita si se encuentra, o `false` si no.
-     */
-    protected function binarySearch(int $id)
-    {
-        $low = 0;
-        $high = count($this->cache) - 1;
-
-        while ($low <= $high) {
-            $mid = intdiv(($low + $high), 2);
-            if ($this->cache[$mid]['id'] == $id) {
-                return $this->cache[$mid];
-            }
-            if ($this->cache[$mid]['id'] < $id) {
-                $low = $mid + 1;
-            } else {
-                $high = $mid - 1;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Inserta una nueva cita en el cache manteniendo el orden por ID.
-     *
-     * @param array $quote Datos de la cita a insertar.
-     */
-    protected function insertQuoteSorted(array $quote)
-    {
-        $id = $quote['id'];
-
-        if (empty($this->cache)) {
-            $this->cache[] = $quote; // Si el cache está vacío, inserta directamente.
-            return;
-        }
-
-        $low = 0;
-        $high = count($this->cache);
-        while ($low < $high) {
-            $mid = intdiv(($low + $high), 2);
-            if ($this->cache[$mid]['id'] < $id) {
-                $low = $mid + 1;
-            } else {
-                $high = $mid;
-            }
-        }
-
-        array_splice($this->cache, $low, 0, [$quote]); // Inserta en la posición correcta.
     }
 }
